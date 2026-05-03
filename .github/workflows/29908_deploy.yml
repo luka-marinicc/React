@@ -27,7 +27,6 @@ jobs:
       # Zgradimo Docker sliko iz Dockerfile datoteke v trenutni mapi.
       - name: Build Docker image
         run: |
-          cd backend
           docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/vaja3:latest .
 
       # Objavimo Docker sliko na DockerHub repozitorij.
