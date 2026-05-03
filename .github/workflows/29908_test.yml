@@ -16,15 +16,15 @@ jobs:
       - name: Check tests
         run: |
           {
-            if [ ! -f backend/package.json ]; then
+            if [ ! -f package.json ]; then
               echo "no package.json" >&2; exit 1
             fi
 
-            if ! grep -q '"test"' backend/package.json; then
+            if ! grep -q '"test"' package.json; then
               echo "no test script" >&2; exit 1
             fi
 
-            if [ ! -d backend/tests ]; then
+            if [ ! -d tests ]; then
               echo "no tests folder" >&2; exit 1
             fi
           } 2> napaka.txt
@@ -62,6 +62,5 @@ jobs:
           node-version: ${{ matrix.node }}
 
       - run: |
-          cd backend
           npm ci
           npm test
