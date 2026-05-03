@@ -2,7 +2,7 @@ name: 29908 Test
 
 on:
   push:
-    branches: [main]
+    branches: [master]
 
 jobs:
   check-tests:
