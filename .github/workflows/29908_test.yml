@@ -6,36 +6,49 @@ on:
 
 jobs:
   check-tests:
+    # Prvi posel preveri, ali projekt vsebuje testno skripto in mapo s testi.
     runs-on: self-hosted
 
     steps:
+      # Prenos kode iz GitHub repozitorija na self-hosted runner.
       - uses: actions/checkout@v4
 
-      - run: touch napaka.txt
+      # Ustvarimo datoteko, v katero bomo zapisali standardno napako.
+      - name: Create error file
+        run: touch napaka.txt
 
+      # Preverimo obstoj package.json, npm test skripte in mape tests.
+      # Standardna napaka se preusmeri v napaka.txt.
       - name: Check tests
         run: |
           {
             if [ ! -f package.json ]; then
-              echo "no package.json" >&2; exit 1
+              echo "no package.json" >&2
+              exit 1
             fi
 
             if ! grep -q '"test"' package.json; then
-              echo "no test script" >&2; exit 1
+              echo "no test script" >&2
+              exit 1
             fi
 
             if [ ! -d tests ]; then
-              echo "no tests folder" >&2; exit 1
+              echo "no tests folder" >&2
+              exit 1
             fi
           } 2> napaka.txt
 
-      - uses: actions/upload-artifact@v4
+      # Datoteko napaka.txt shranimo kot artefakt, da jo lahko uporabi drugi posel.
+      - name: Upload error artifact
         if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: napaka
           path: napaka.txt
 
   run-tests:
+    # Drugi posel se izvede samo, če je prvi posel uspešen.
+    # Od prvega posla prejme artefakt napaka.txt.
     runs-on: self-hosted
     needs: check-tests
 
@@ -44,23 +57,31 @@ jobs:
         node: [20]
 
     steps:
+      # Prenos kode iz repozitorija.
       - uses: actions/checkout@v4
 
-      - uses: actions/download-artifact@v4
+      # Prenos artefakta napaka.txt iz prvega posla.
+      - name: Download error artifact
+        uses: actions/download-artifact@v4
         with:
           name: napaka
 
-      - name: Fail if error exists
+      # Če napaka.txt ni prazna, teste prekinemo.
+      - name: Check error file
         run: |
           if [ -s napaka.txt ]; then
             cat napaka.txt
             exit 1
           fi
 
-      - uses: actions/setup-node@v4
+      # Priprava Node.js okolja z uporabo matrike.
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
 
-      - run: |
+      # Namestitev odvisnosti in zagon testov.
+      - name: Install dependencies and run tests
+        run: |
           npm ci
           npm test
