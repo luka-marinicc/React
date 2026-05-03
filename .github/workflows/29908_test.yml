@@ -1,0 +1,67 @@
+name: 29908 Test
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  check-tests:
+    runs-on: self-hosted
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: touch napaka.txt
+
+      - name: Check tests
+        run: |
+          {
+            if [ ! -f backend/package.json ]; then
+              echo "no package.json" >&2; exit 1
+            fi
+
+            if ! grep -q '"test"' backend/package.json; then
+              echo "no test script" >&2; exit 1
+            fi
+
+            if [ ! -d backend/tests ]; then
+              echo "no tests folder" >&2; exit 1
+            fi
+          } 2> napaka.txt
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: napaka
+          path: napaka.txt
+
+  run-tests:
+    runs-on: self-hosted
+    needs: check-tests
+
+    strategy:
+      matrix:
+        node: [20]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: napaka
+
+      - name: Fail if error exists
+        run: |
+          if [ -s napaka.txt ]; then
+            cat napaka.txt
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - run: |
+          cd backend
+          npm ci
+          npm test
